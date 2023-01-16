@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	signal(SIGABRT, exit_signal);
 	
 
-	reconos_thread_create_hwt_gaussianblur(0);
+	reconos_thread_create_hwt_gaussian(0);
 
 	while(1)
 	{
