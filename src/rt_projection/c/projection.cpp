@@ -30,14 +30,14 @@ THREAD_ENTRY() {
 	
 		while(1)
 		{
-			ROS_SUBSCRIBE_TAKE(rgaussianblur_subdata, rgaussianblur_camera_image);
-            cv::Mat cv_image_original = cv::Mat(rgaussianblur_camera_image->height, rgaussianblur_camera_image->width, CV_8UC3, rgaussianblur_camera_image->data.data);
-            printf("Got msg \n");
-            cv::GaussianBlur(cv_image_original, cv_image_original, Size(7, 7), 0.8666f);
-             printf("Msg filtered \n");
-            PublishMat(cv_image_original, rgaussianblur_camera_image);
-            printf("Now publish! \n");
-            ROS_PUBLISH(rgaussianblur_pubout, rgaussianblur_camera_image);
+			// ROS_SUBSCRIBE_TAKE(rgaussianblur_subdata, rgaussianblur_camera_image);
+            // cv::Mat cv_image_original = cv::Mat(rgaussianblur_camera_image->height, rgaussianblur_camera_image->width, CV_8UC3, rgaussianblur_camera_image->data.data);
+            // printf("Got msg \n");
+            // cv::GaussianBlur(cv_image_original, cv_image_original, Size(7, 7), 0.8666f);
+            //  printf("Msg filtered \n");
+            // PublishMat(cv_image_original, rgaussianblur_camera_image);
+            // printf("Now publish! \n");
+            // ROS_PUBLISH(rgaussianblur_pubout, rgaussianblur_camera_image);
             
 		}
 
