@@ -17,8 +17,8 @@ using namespace std;
 #define WIDTH 640
 #define INTYPE uint64_t
 
-#define OUTPUT_WIDTH 600
-#define OUTPUT_HEIGHT 1000
+#define OUTPUT_WIDTH 1000
+#define OUTPUT_HEIGHT 600
 
 #define RO 0 // 8 Pixel Processing
 #define NO 1 // 1 Pixel Processing
@@ -54,7 +54,7 @@ using namespace std;
 #endif
 
 
-void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_mem2hwt,uint64_t pMessage, ap_uint<64> ram_out[640*480*3/8])
+void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_mem2hwt,uint64_t pMessage, ap_uint<64> ram_out[OUTPUT_WIDTH * OUTPUT_HEIGHT*3/8])
 {
     ap_uint<64> ram_in[640*480*3/8];
     
@@ -126,65 +126,67 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
 
     }
     
-    resize<XF_INTERPOLATION_TYPE, XF_8UC3, HEIGHT, WIDTH, 600, 1000, XF_NPPC1, MAXDOWNSCALE>(in_mat, resized_mat);
+    resize<XF_INTERPOLATION_TYPE, XF_8UC3, HEIGHT, WIDTH, OUTPUT_HEIGHT, OUTPUT_WIDTH, XF_NPPC1, MAXDOWNSCALE>(in_mat, resized_mat);
 
 
+
+/*
     for(int i = 0; i < OUTPUT_WIDTH * OUTPUT_HEIGHT; i++)
     {
         ap_uint<32> output_pix; 
-        ap_uint<24> input_pix = resized_mat.read (i*8 + 0);
+        ap_uint<24> input_pix = resized_mat.read (i*8);
         output_pix.range(23, 0) = input_pix;
-        tmp_mat.write(i*8 + 6, output_pix);
+        out_mat.write(i*8, output_pix);
     }
 
-
-    xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, 600, 1000, NPC1, XF_USE_URAM>(tmp_mat, out_mat, transform_matrix);
+*/
+    //xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, 600, 1000, NPC1, XF_USE_URAM>(tmp_mat, out_mat, transform_matrix);
     
 
     ramptr = 0;
-    loop_write: for(int i = 0; i < WIDTH * HEIGHT / 8; i+=1)
+    loop_write: for(int i = 0; i < OUTPUT_WIDTH * OUTPUT_HEIGHT / 8; i+=1)
     {
         ap_uint<24> pix;
         ap_uint<64> tmp_ram;
         
-        pix = out_mat.read (i*8 + 0);
+        pix = resized_mat.read (i*8 + 0);
         tmp_ram.range( 7, 0) = pix.range(23,16);
         tmp_ram.range(15, 8) = pix.range(15,8);
         tmp_ram.range(23,16) = pix.range(7,0);
 
-        pix = out_mat.read (i*8 + 1);
+        pix = resized_mat.read (i*8 + 1);
         tmp_ram.range(31,24) = pix.range(23,16);
         tmp_ram.range(39,32) = pix.range(15,8);
         tmp_ram.range(47,40) = pix.range(7,0);
 
-        pix = out_mat.read (i*8 + 2);
+        pix = resized_mat.read (i*8 + 2);
         tmp_ram.range(55,48) = pix.range(23,16);
         tmp_ram.range(63,56) = pix.range(15,8);
         ram_out[ramptr++] = tmp_ram;
         tmp_ram.range( 7, 0) = pix.range(7,0 );
 
-        pix = out_mat.read (i*8 + 3);
+        pix = resized_mat.read (i*8 + 3);
         tmp_ram.range(15, 8) = pix.range(23,16);
         tmp_ram.range(23,16) = pix.range(15,8);
         tmp_ram.range(31,24) = pix.range(7,0);
 
-        pix = out_mat.read (i*8 + 4);
+        pix = resized_mat.read (i*8 + 4);
         tmp_ram.range(39,32) = pix.range(23,16);
         tmp_ram.range(47,40) = pix.range(15,8);
         tmp_ram.range(55,48) = pix.range(7,0);
 
-        pix = out_mat.read (i*8 + 5);
+        pix = resized_mat.read (i*8 + 5);
         tmp_ram.range(63,56) = pix.range(23,16);
         ram_out[ramptr++] = tmp_ram;
         tmp_ram.range( 7, 0) = pix.range(15,8);
         tmp_ram.range(15, 8) = pix.range(7,0);
 
-        pix = out_mat.read (i*8 + 6);
+        pix = resized_mat.read (i*8 + 6);
         tmp_ram.range(23,16) = pix.range(23,16);
         tmp_ram.range(31,24) = pix.range(15,8);
         tmp_ram.range(39,32) = pix.range(7,0);
 
-        pix = out_mat.read (i*8 + 7);
+        pix = resized_mat.read (i*8 + 7);
         tmp_ram.range(47,40) = pix.range(23,16);
         tmp_ram.range(55,48) = pix.range(15,8);
         tmp_ram.range(63,56) = pix.range(7,0);
@@ -194,12 +196,12 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
 }
 
 THREAD_ENTRY() {
-    ap_uint<64> ram_out[640*480*3/8];
+    ap_uint<64> ram_out[OUTPUT_WIDTH * OUTPUT_HEIGHT*3/8];
     uint64_t output_payload_addr[1];
 
 
     //not tested
-    //#pragma HLS RESOURCE variable=ram_out core=XPM_MEMORY uram
+    #pragma HLS RESOURCE variable=ram_out core=XPM_MEMORY uram
 
     THREAD_INIT();
 	uint64_t initdata = GET_INIT_DATA();
@@ -215,7 +217,7 @@ THREAD_ENTRY() {
         MEM_READ(OFFSETOF(sensor_msgs__msg__Image, data.data) + pMessage, payload_addr, 8);            
         proc(memif_hwt2mem, memif_mem2hwt, payload_addr[0], ram_out);
 
-        MEM_WRITE(ram_out, output_payload_addr[0], WIDTH*HEIGHT*3);
+        MEM_WRITE(ram_out, output_payload_addr[0], OUTPUT_WIDTH * OUTPUT_HEIGHT*3);
         ROS_PUBLISH(rcameraimageprojection_pubout, rcameraimageprojection_output_image);
     }
 
