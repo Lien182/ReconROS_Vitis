@@ -9,22 +9,22 @@
 
 #include "main.h"
 
-#define DEFAULT_IMAGE_HEIGHT 1024
-#define DEFAULT_IMAGE_WIDTH  1280
+#define OUTPUT_IMAGE_HEIGHT 600
+#define OUTPUT_IMAGE_WIDTH  1000
 
 
 void init_msg(void)
 {
-  	rgaussianblur_output_image->height = 480;
-  	rgaussianblur_output_image->width = 640;
-  	rgaussianblur_output_image->encoding.data = "bgr8";
-	rgaussianblur_output_image->encoding.size = 4;  
-	rgaussianblur_output_image->encoding.capacity = 5;  
-  	rgaussianblur_output_image->is_bigendian = 0;
-  	rgaussianblur_output_image->step = 640*3;
-  	rgaussianblur_output_image->data.data = malloc(DEFAULT_IMAGE_HEIGHT*DEFAULT_IMAGE_WIDTH*3);
-	rgaussianblur_output_image->data.size = 480*640*3;
-	rgaussianblur_output_image->data.capacity = DEFAULT_IMAGE_HEIGHT*DEFAULT_IMAGE_WIDTH*3;
+  	rcameraimageprojection_output_image->height = OUTPUT_IMAGE_HEIGHT;
+  	rcameraimageprojection_output_image->width = OUTPUT_IMAGE_WIDTH;
+  	rcameraimageprojection_output_image->encoding.data = "bgr8";
+	rcameraimageprojection_output_image->encoding.size = 4;  
+	rcameraimageprojection_output_image->encoding.capacity = 5;  
+  	rcameraimageprojection_output_image->is_bigendian = 0;
+  	rcameraimageprojection_output_image->step = OUTPUT_IMAGE_WIDTH*3;
+  	rcameraimageprojection_output_image->data.data = malloc(OUTPUT_IMAGE_HEIGHT*OUTPUT_IMAGE_WIDTH*3);
+	rcameraimageprojection_output_image->data.size = OUTPUT_IMAGE_HEIGHT*OUTPUT_IMAGE_WIDTH*3;
+	rcameraimageprojection_output_image->data.capacity = OUTPUT_IMAGE_HEIGHT*OUTPUT_IMAGE_WIDTH*3;
   
 	return;
 }
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	signal(SIGABRT, exit_signal);
 	
 
-	reconos_thread_create_hwt_gaussian(0);
+	reconos_thread_create_hwt_projection(0);
 
 	while(1)
 	{
