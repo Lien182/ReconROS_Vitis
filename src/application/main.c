@@ -56,8 +56,7 @@ int main(int argc, char **argv)
 	while(1)
 	{
 		sleep(1);
-
-		}
+	}
 
 	reconos_app_cleanup();
 	reconos_cleanup();

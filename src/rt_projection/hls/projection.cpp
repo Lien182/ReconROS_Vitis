@@ -39,7 +39,7 @@ using namespace std;
 #define XF_INTERPOLATION_TYPE XF_INTERPOLATION_BILINEAR
 #define MAXDOWNSCALE 2
 // transform type 0-AFFINE 1-PERSPECTIVE
-#define TRANSFORM_TYPE 0
+#define TRANSFORM_TYPE 1
 #define XF_USE_URAM false
 
 
@@ -68,9 +68,14 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
     xf::cv::Mat<XF_8UC4,    600,  1000, XF_NPPC1> out_mat(600,  1000);       
 
 
-    float transform_matrix[9]= {    -2.405063291139244f, -3.797468354430384f,       1269.620253164558f,
-                                    0.0f,                -8.354430379746846f,       2422.784810126584f,
-                                    0.0f,                -0.007594936708860767f,    1.0f};
+    //float transform_matrix[9]= {    -2.405063291139244f, -3.797468354430384f,       1269.620253164558f,
+    //                                0.0f,                -8.354430379746846f,       2422.784810126584f,
+    //                                0.0f,                -0.007594936708860767f,    1.0f};
+
+
+    float transform_matrix[9]= {    -1.539240506329116f,    -3.037974683544307f,    1269.620253164558f,
+                                    0.0f,                   -6.683544303797476f,    2422.784810126584f,
+                                    0.0f,                   -0.006075949367088614f, 1.0f};
 
 
     #pragma HLS DATAFLOW
@@ -128,19 +133,14 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
     
     resize<XF_INTERPOLATION_TYPE, XF_8UC3, HEIGHT, WIDTH, OUTPUT_HEIGHT, OUTPUT_WIDTH, XF_NPPC1, MAXDOWNSCALE>(in_mat, resized_mat);
 
-
-
-/*
     for(int i = 0; i < OUTPUT_WIDTH * OUTPUT_HEIGHT; i++)
     {
         ap_uint<32> output_pix; 
-        ap_uint<24> input_pix = resized_mat.read (i*8);
-        output_pix.range(23, 0) = input_pix;
-        out_mat.write(i*8, output_pix);
+        output_pix.range(23, 0) = resized_mat.read (i);
+        tmp_mat.write(i, output_pix);
     }
 
-*/
-    //xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, 600, 1000, NPC1, XF_USE_URAM>(tmp_mat, out_mat, transform_matrix);
+    xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, 600, 1000, NPC1, XF_USE_URAM>(tmp_mat, out_mat, transform_matrix);
     
 
     ramptr = 0;
@@ -149,44 +149,44 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
         ap_uint<24> pix;
         ap_uint<64> tmp_ram;
         
-        pix = resized_mat.read (i*8 + 0);
+        pix = out_mat.read (i*8 + 0);
         tmp_ram.range( 7, 0) = pix.range(23,16);
         tmp_ram.range(15, 8) = pix.range(15,8);
         tmp_ram.range(23,16) = pix.range(7,0);
 
-        pix = resized_mat.read (i*8 + 1);
+        pix = out_mat.read (i*8 + 1);
         tmp_ram.range(31,24) = pix.range(23,16);
         tmp_ram.range(39,32) = pix.range(15,8);
         tmp_ram.range(47,40) = pix.range(7,0);
 
-        pix = resized_mat.read (i*8 + 2);
+        pix = out_mat.read (i*8 + 2);
         tmp_ram.range(55,48) = pix.range(23,16);
         tmp_ram.range(63,56) = pix.range(15,8);
         ram_out[ramptr++] = tmp_ram;
         tmp_ram.range( 7, 0) = pix.range(7,0 );
 
-        pix = resized_mat.read (i*8 + 3);
+        pix = out_mat.read (i*8 + 3);
         tmp_ram.range(15, 8) = pix.range(23,16);
         tmp_ram.range(23,16) = pix.range(15,8);
         tmp_ram.range(31,24) = pix.range(7,0);
 
-        pix = resized_mat.read (i*8 + 4);
+        pix = out_mat.read (i*8 + 4);
         tmp_ram.range(39,32) = pix.range(23,16);
         tmp_ram.range(47,40) = pix.range(15,8);
         tmp_ram.range(55,48) = pix.range(7,0);
 
-        pix = resized_mat.read (i*8 + 5);
+        pix = out_mat.read (i*8 + 5);
         tmp_ram.range(63,56) = pix.range(23,16);
         ram_out[ramptr++] = tmp_ram;
         tmp_ram.range( 7, 0) = pix.range(15,8);
         tmp_ram.range(15, 8) = pix.range(7,0);
 
-        pix = resized_mat.read (i*8 + 6);
+        pix = out_mat.read (i*8 + 6);
         tmp_ram.range(23,16) = pix.range(23,16);
         tmp_ram.range(31,24) = pix.range(15,8);
         tmp_ram.range(39,32) = pix.range(7,0);
 
-        pix = resized_mat.read (i*8 + 7);
+        pix = out_mat.read (i*8 + 7);
         tmp_ram.range(47,40) = pix.range(23,16);
         tmp_ram.range(55,48) = pix.range(15,8);
         tmp_ram.range(63,56) = pix.range(7,0);
