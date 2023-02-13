@@ -24,10 +24,10 @@ using namespace std;
 #define NO 1 // 1 Pixel Processing
 
 // Number of rows of input image to be stored
-#define NUM_STORE_ROWS 100
+#define NUM_STORE_ROWS 320
 
 // Number of rows of input image after which output image processing must start
-#define START_PROC 50
+#define START_PROC 250
 
 #define RGBA 1
 #define GRAY 0
@@ -62,10 +62,10 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
     #pragma HLS stream variable=ram_in depth=32
 
    
-    xf::cv::Mat<XF_8UC3, HEIGHT, WIDTH, XF_NPPC1> in_mat(HEIGHT,WIDTH);
-    xf::cv::Mat<XF_8UC3,    600,  1000, XF_NPPC1> resized_mat(600,  1000);
-    xf::cv::Mat<XF_8UC4,    600,  1000, XF_NPPC1> tmp_mat(600,  1000);    
-    xf::cv::Mat<XF_8UC4,    600,  1000, XF_NPPC1> out_mat(600,  1000);       
+    xf::cv::Mat<XF_8UC4, HEIGHT, WIDTH, XF_NPPC1> in_mat(HEIGHT,WIDTH);
+    xf::cv::Mat<XF_8UC4, HEIGHT, WIDTH, XF_NPPC1> tmp_mat(HEIGHT,WIDTH);  
+    xf::cv::Mat<XF_8UC3, HEIGHT, WIDTH, XF_NPPC1> resizing_mat(HEIGHT, WIDTH);      
+    xf::cv::Mat<XF_8UC3,    600,  1000, XF_NPPC1> out_mat(600,  1000);       
 
 
     //float transform_matrix[9]= {    -2.405063291139244f, -3.797468354430384f,       1269.620253164558f,
@@ -73,9 +73,9 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
     //                                0.0f,                -0.007594936708860767f,    1.0f};
 
 
-    float transform_matrix[9]= {    -1.539240506329116f,    -3.037974683544307f,    1269.620253164558f,
-                                    0.0f,                   -6.683544303797476f,    2422.784810126584f,
-                                    0.0f,                   -0.006075949367088614f, 1.0f};
+    float transform_matrix[9]= {   -0.64967f,     0.30239f,   -58.21053f,
+                                    0.00000f,     0.12442f, -241.15789f,
+                                    0.00000f,     0.00094f,    -0.83158f};
 
 
     #pragma HLS DATAFLOW
@@ -84,7 +84,7 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
     int ramptr = 0;
     loop_read: for(int i = 0; i < WIDTH * HEIGHT / 8; i+=1)
     {
-        ap_uint<24> pix;
+        ap_uint<32> pix;
         uint64_t tmp_ram = ram_in[ramptr++];
 
         pix.range(23,16) =  (tmp_ram >> 0) & 0xff;
@@ -131,18 +131,21 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
 
     }
     
-    resize<XF_INTERPOLATION_TYPE, XF_8UC3, HEIGHT, WIDTH, OUTPUT_HEIGHT, OUTPUT_WIDTH, XF_NPPC1, MAXDOWNSCALE>(in_mat, resized_mat);
-
-    for(int i = 0; i < OUTPUT_WIDTH * OUTPUT_HEIGHT; i++)
-    {
-        ap_uint<32> output_pix; 
-        output_pix.range(23, 0) = resized_mat.read (i);
-        tmp_mat.write(i, output_pix);
-    }
-
-    xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, 600, 1000, NPC1, XF_USE_URAM>(tmp_mat, out_mat, transform_matrix);
+    xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, HEIGHT, WIDTH, NPC1, XF_USE_URAM>(in_mat, tmp_mat, transform_matrix);
     
 
+
+    for(int i = 0; i < HEIGHT * WIDTH; i++)
+    {
+        ap_uint<24> output_pix; 
+        ap_uint<32> input_pix = tmp_mat.read (i);
+        output_pix = input_pix.range(23, 0);
+        resizing_mat.write(i, output_pix);
+    }
+
+    resize<XF_INTERPOLATION_TYPE, XF_8UC3, HEIGHT, WIDTH, OUTPUT_HEIGHT, OUTPUT_WIDTH, XF_NPPC1, MAXDOWNSCALE>( resizing_mat , out_mat);
+
+    
     ramptr = 0;
     loop_write: for(int i = 0; i < OUTPUT_WIDTH * OUTPUT_HEIGHT / 8; i+=1)
     {

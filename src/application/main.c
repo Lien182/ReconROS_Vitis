@@ -41,6 +41,11 @@ static void exit_signal(int sig)
 
 int main(int argc, char **argv) 
 {
+	if(argc != 2)
+	{
+		printf("Usage: ./reconrosvitisexample <sw/hw> \n");
+		return -1;
+	}
 	reconos_init();
 	reconos_app_init();
 
@@ -50,8 +55,19 @@ int main(int argc, char **argv)
 	signal(SIGTERM, exit_signal);
 	signal(SIGABRT, exit_signal);
 	
+	if(!strcmp(argv[1], "sw"))
+	{
+		printf("Start execution in sw \n");
+		reconos_thread_create_swt_projection(0,0);		
+	}
 
-	reconos_thread_create_hwt_projection(0);
+	else
+	{
+		printf("Start execution in hw \n");	
+		reconos_thread_create_hwt_projection(0);
+	
+	}
+
 
 	while(1)
 	{

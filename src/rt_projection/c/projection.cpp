@@ -134,7 +134,7 @@ THREAD_ENTRY() {
             // # adding Gaussian blur to the image of original
             // cv_image_original = cv2.GaussianBlur(cv_image_original, (5, 5), 0)
 
-            resize(cv_image_original, cv_image_original, Size(1000, 600), INTER_LINEAR);
+            
     
             // ## homography transform process
             // # selecting 4 points from the original image
@@ -146,8 +146,8 @@ THREAD_ENTRY() {
             //autorace 2020
             //pts_src = np.array([[160 - top_x, 180 - top_y], [160 + top_x, 180 - top_y], [160 + bottom_x, 120 + bottom_y], [160 - bottom_x, 120 + bottom_y]])
 
-            double factor_width = 1000.0 / 640.0;
-            double factor_height = 600.0 / 480.0;
+            double factor_width = 1;//1000.0 / 640.0;
+            double factor_height = 1;//600.0 / 480.0;
             vector<Point2f> pts_src;
 	        pts_src.push_back(Point2f(factor_width * (320 - top_x),     factor_height * (360 - top_y)));
 	        pts_src.push_back(Point2f(factor_width * (320 + top_x),     factor_height * (360 - top_y)));
@@ -158,12 +158,14 @@ THREAD_ENTRY() {
             // # selecting 4 points from image that will be transformed
             // pts_dst = np.array([[200, 0], [800, 0], [800, 600], [200, 600]])
             
+            factor_width = 1000.0 / 640.0;
+            factor_height = 600.0 / 480.0;
 
       	    vector<Point2f> pts_dst;
-	        pts_dst.push_back(Point2f(200, 0));
-	        pts_dst.push_back(Point2f(800, 0));
-	        pts_dst.push_back(Point2f(800, 600));
-	        pts_dst.push_back(Point2f(200, 600));
+	        pts_dst.push_back(Point2f(200/factor_width, 0 / factor_height));
+	        pts_dst.push_back(Point2f(800/factor_width, 0 / factor_height));
+	        pts_dst.push_back(Point2f(800/factor_width, 600 / factor_height));
+	        pts_dst.push_back(Point2f(200/factor_width, 600 / factor_height));
 
             // # finding homography matrix
             // h, status = cv2.findHomography(pts_src, pts_dst)
@@ -177,10 +179,12 @@ THREAD_ENTRY() {
 
             cv::Mat cv_image_homography;
 
-            cv::warpPerspective(cv_image_original, cv_image_homography, h, Size(1000, 600));
+            cv::warpPerspective(cv_image_original, cv_image_homography, h, Size(640, 480), cv::INTER_LINEAR);//  + cv::WARP_INVERSE_MAP);
 
             // # fill the empty space with black triangles on left and right side of bottom
             // triangle1 = np.array([[0, 599], [0, 340], [200, 599]], np.int32)
+
+            resize(cv_image_homography, cv_image_homography, Size(1000, 600), INTER_LINEAR);
 
             vector<Point> triangle1;
             triangle1.push_back(Point(0,500));
@@ -222,3 +226,4 @@ THREAD_ENTRY() {
 
 	return;
 }
+
