@@ -17,17 +17,17 @@ using namespace std;
 #define WIDTH 640
 #define INTYPE uint64_t
 
-#define OUTPUT_WIDTH 640
-#define OUTPUT_HEIGHT 480
+#define OUTPUT_WIDTH 1000
+#define OUTPUT_HEIGHT 600
 
 #define RO 0 // 8 Pixel Processing
 #define NO 1 // 1 Pixel Processing
 
 // Number of rows of input image to be stored
-#define NUM_STORE_ROWS 320
+#define NUM_STORE_ROWS 480
 
 // Number of rows of input image after which output image processing must start
-#define START_PROC 250
+#define START_PROC 479
 
 #define RGBA 1
 #define GRAY 0
@@ -51,7 +51,7 @@ using namespace std;
 
 
 #define WARPTRANSFORM_LATENCY_OFFSET (START_PROC)
-#define RESIZE_LATENCY_OFFSET 0
+#define RESIZE_LATENCY_OFFSET 2
 #define OPERATION_LATENCY (WARPTRANSFORM_LATENCY_OFFSET + RESIZE_LATENCY_OFFSET)
 
 
@@ -150,44 +150,44 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
                 ap_uint<24> pix;
                 ap_uint<64> tmp_ram;
                 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 0);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 0);
                 tmp_ram.range( 7, 0) = pix.range(23,16);
                 tmp_ram.range(15, 8) = pix.range(15,8);
                 tmp_ram.range(23,16) = pix.range(7,0);
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 1);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 1);
                 tmp_ram.range(31,24) = pix.range(23,16);
                 tmp_ram.range(39,32) = pix.range(15,8);
                 tmp_ram.range(47,40) = pix.range(7,0);
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 2);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 2);
                 tmp_ram.range(55,48) = pix.range(23,16);
                 tmp_ram.range(63,56) = pix.range(15,8);
                 ram_out[ramptr++] = tmp_ram;
                 tmp_ram.range( 7, 0) = pix.range(7,0 );
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 3);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 3);
                 tmp_ram.range(15, 8) = pix.range(23,16);
                 tmp_ram.range(23,16) = pix.range(15,8);
                 tmp_ram.range(31,24) = pix.range(7,0);
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 4);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 4);
                 tmp_ram.range(39,32) = pix.range(23,16);
                 tmp_ram.range(47,40) = pix.range(15,8);
                 tmp_ram.range(55,48) = pix.range(7,0);
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 5);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 5);
                 tmp_ram.range(63,56) = pix.range(23,16);
                 ram_out[ramptr++] = tmp_ram;
                 tmp_ram.range( 7, 0) = pix.range(15,8);
                 tmp_ram.range(15, 8) = pix.range(7,0);
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 6);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 6);
                 tmp_ram.range(23,16) = pix.range(23,16);
                 tmp_ram.range(31,24) = pix.range(15,8);
                 tmp_ram.range(39,32) = pix.range(7,0);
 
-                pix = tmp_mat.read (lines*OUTPUT_WIDTH + i*8 + 7);
+                pix = out_mat.read (lines*OUTPUT_WIDTH + i*8 + 7);
                 tmp_ram.range(47,40) = pix.range(23,16);
                 tmp_ram.range(55,48) = pix.range(15,8);
                 tmp_ram.range(63,56) = pix.range(7,0);
@@ -202,7 +202,7 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
     
     xf::cv::warpTransform<NUM_STORE_ROWS, START_PROC, TRANSFORM_TYPE, INTERPOLATION, XF_8UC4, HEIGHT, WIDTH, NPC1, XF_USE_URAM>(in_mat, tmp_mat, transform_matrix);
     
-    /*
+    
     for(int i = 0; i < HEIGHT * WIDTH; i++)
     {
         ap_uint<24> output_pix; 
@@ -213,7 +213,7 @@ void proc(hls::stream<uint64_t> & memif_hwt2mem, hls::stream<uint64_t> & memif_m
 
     resize<XF_INTERPOLATION_TYPE, XF_8UC3, HEIGHT, WIDTH, OUTPUT_HEIGHT, OUTPUT_WIDTH, XF_NPPC1, MAXDOWNSCALE>( resizing_mat , out_mat);
 
-    */
+
    
 
 }
